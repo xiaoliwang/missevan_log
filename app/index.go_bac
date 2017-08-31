@@ -1,0 +1,190 @@
+package main
+
+import (
+	"os"
+	"sync"
+	"fmt"
+	"bufio"
+	log2 "missevan_log/log"
+	"regexp"
+	"flag"
+	"time"
+	"missevan_log/myfile"
+	"log"
+	_ "runtime/pprof"
+	"bytes"
+)
+
+var wg sync.WaitGroup
+
+var date string
+var download bool
+var input string
+
+var temp string = "./temp/"
+var output string = "./output/"
+
+var chan_log = make(chan *log2.Log, 30)
+var finish = make(chan struct{})
+
+func init() {
+	flag.StringVar(&date, "date", "", "the date you want to get")
+	flag.StringVar(&input, "input", "./input/", "the date you want to get")
+	flag.BoolVar(&download, "download", true, "download files")
+	flag.Parse()
+}
+
+func main() {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	if (!myfile.DirExist(output)) {
+		os.Mkdir(output, 755)
+	}
+
+	if (!myfile.DirExist(temp)) {
+		os.Mkdir(temp, 755)
+	}
+
+	/*f, err := os.Create("cpu-profile.prof")
+	if nil != err {
+		log.Fatal(err)
+	}*/
+
+	// pprof.StartCPUProfile(f)
+	getLogs(date)
+	go writeLog()
+	go alive()
+	wg.Wait()
+	close(chan_log)
+	<-finish
+	// pprof.StopCPUProfile()
+}
+
+func alive() {
+	for {
+		fmt.Printf("%c", '.');
+		time.Sleep(5 * time.Second);
+	}
+}
+
+func writeLog() {
+	file_name := output + date + ".txt"
+	file, err := os.Create(file_name);
+	if nil != err {
+		log.Fatal(err)
+	}
+	defer file.Close()
+	writer := bufio.NewWriter(file)
+	for log := range chan_log {
+		log_date := log.Time.Format("20060102")
+		if (log_date != date) {
+			continue
+		}
+		fmt.Fprintln(writer, log.Ip)
+
+	}
+	writer.Flush()
+	finish<- struct{}{}
+}
+
+const layout = "20060102"
+func getFilesName(date string)[]string {
+	var today time.Time
+	var err error
+	if today, err = time.Parse(layout, date); nil != err {
+		log.Fatal("时间格式不合法", err)
+		panic(err)
+	}
+
+	yesterday := today.AddDate(0, 0, -1)
+	tomorrow := today.AddDate(0, 0, 1)
+
+	dates := [3]string{
+		tomorrow.Format(layout),
+		today.Format(layout),
+		yesterday.Format(layout),
+	}
+
+	file_type := 2
+	filenames := make([]string, len(dates) * file_type)
+	index := 0
+	for _, date := range dates {
+		for i := 1; i <= 2 ; i++ {
+			filename := fmt.Sprintf("%s-%d", date, i)
+			filenames[index] = filename
+			index++
+		}
+	}
+
+	return filenames
+}
+
+
+
+func getLogs(date string) {
+	filenames := getFilesName(date)
+
+	for _, filename := range filenames {
+		wg.Add(1)
+		go func(filename string) {
+			defer wg.Done()
+			file_path := input + filename + ".gz"
+			temp_file := temp + filename + ".gz"
+			unzip_file := temp + filename
+
+			if (download && !myfile.FileExist(unzip_file)) {
+				myfile.Copy(temp_file, file_path)
+				myfile.Ungzip(unzip_file, temp_file)
+			}
+
+			handleLog(unzip_file, "dilidili")
+		}(filename)
+	}
+}
+
+func handleLog(path string, refer string) {
+	var (
+		line string
+		part []byte
+		prefix bool
+	)
+	defer func() {
+		if err := recover(); err != nil {
+			log.Fatal(line)
+		}
+	}()
+
+
+	r_file, err := os.Open(path)
+	if nil != err {
+		log.Fatal("Open file failed", err)
+	}
+	defer r_file.Close()
+
+	reader := bufio.NewReader(r_file)
+
+	buffer := bytes.NewBuffer(make([]byte, 1024))
+	buffer.Reset()
+	regexp_c, _ := regexp.Compile(refer)
+
+	for {
+		if part, prefix, err = reader.ReadLine(); nil != err {
+			break
+		}
+		buffer.Write(part)
+
+		if !prefix {
+			line = buffer.String()
+			if log := log2.NewLog(line); nil != log {
+				if matched := regexp_c.MatchString(log.Refer); matched {
+					chan_log<-log
+				}
+			}
+			buffer.Reset()
+		}
+	}
+}
