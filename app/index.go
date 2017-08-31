@@ -92,7 +92,7 @@ func writeLog() {
 				writer.Flush()
 			}(file_name, my_chan)
 		}
-		map_chan[my_log.From] <- mylog
+		map_chan[my_log.From] <- my_log
 	}
 }
 
@@ -144,7 +144,7 @@ func handleLog(file_name string) {
 		buffer.Write(part)
 		if !prefix {
 			line = buffer.String()
-			if my_log := mylog.NewLog(line); nil != log {
+			if my_log := mylog.NewLog(line); nil != my_log {
 				if date == my_log.Time.Format("20160102") {
 					chan_log <- my_log
 				}
