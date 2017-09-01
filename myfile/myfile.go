@@ -74,7 +74,7 @@ func Ungzip(dis, src string) {
 func CreateFile(file_path string) (*os.File, error) {
 	dir_path := path.Dir(file_path)
 	if !DirExist(dir_path) {
-		os.Mkdir(dir_path, 755)
+		os.MkdirAll(dir_path, 755)
 	}
 	file, err := os.Create(file_path)
 	return file, err

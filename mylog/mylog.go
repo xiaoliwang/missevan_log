@@ -4,6 +4,8 @@ import (
 	"time"
 	"strings"
 	"fmt"
+	_ "log"
+	"log"
 )
 
 type Log struct {
@@ -12,29 +14,23 @@ type Log struct {
 	Time time.Time
 }
 
-func NewLog(s string) *Log {
+func NewLog(s string) (my_log *Log) {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println(err)
+			my_log = nil
+		}
+	}()
 	fields := parseNginxLog(s)
 	length := len(fields)
 	if 11 == length || 10 == length {
-		var from string
-		if 11 == length {
-			from = strings.Trim(fields[10], "\"")
-		} else {
-			from = strings.Trim(fields[7], "\"")
-		}
-
-		if "-" == from {
-			return nil
-		}
-
-		return &Log{
+		my_log = &Log{
 			ipFormat(fields[9]),
-			from,
+			fromFormat(fields, length),
 			timeFormat(fields[3]),
 		}
-
 	}
-	return nil
+	return
 }
 
 func parseNginxLog(s string) []string {
@@ -42,7 +38,7 @@ func parseNginxLog(s string) []string {
 	quotation := false
 
 	fields := strings.FieldsFunc(s, func(r rune) bool {
-		switch (r) {
+		switch r {
 		case '[':
 			bracket++
 		case ']':
@@ -87,4 +83,35 @@ func timeFormat(s string) time.Time {
 	return t
 }
 
+var froms = [...]string {
+	// "missevan",
+	"missevan_google",
+	"missevan_baidu",
+	"missevan_360",
+	"missevan_mi",
+	"missevan_oppo",
+	"missevan_vivo",
+	"missevan_huawei",
+	"missevan_tencent",
+	"missevan_nubia",
+	"missevan_gionee",
+	"missevan_wandoujia",
+}
+
+func fromFormat(fields []string, length int) string {
+	var from string
+
+	if 11 == length {
+		from = strings.Trim(fields[10], "\"")
+	} else {
+		from = strings.Trim(fields[7], "\"")
+	}
+
+	for _, new_from := range froms {
+		if from == new_from {
+			return from
+		}
+	}
+	return "-"
+}
 

@@ -67,38 +67,31 @@ func alive() {
 }
 
 func writeLog() {
-	map_chan := make(map[string]chan *mylog.Log)
+	map_chans := make(map[string]chan *mylog.Log)
 	for my_log := range chan_log {
 		file_name := path.Join(output, date, "files", my_log.From + ".txt")
 		if !myfile.FileExist(file_name) {
-
 			file, err := myfile.CreateFile(file_name)
 			if nil != err {
 				log.Fatal(err)
 			}
-			defer file.Close()
 
 			my_chan := make(chan *mylog.Log)
-			map_chan[my_log.From] = my_chan
+			map_chans[my_log.From] = my_chan
 			defer close(my_chan)
 
 			wwg.Add(1)
-			go func(file_name string, my_chan chan*mylog.Log) {
+			go func(file *os.File, my_chan chan*mylog.Log) {
 				defer wwg.Done()
-				fmt.Println("file name", file_name)
-				file, err := os.Open(file_name)
-				if nil != err {
-					log.Fatal(err)
-				}
 				defer file.Close()
 				writer := bufio.NewWriter(file)
 				for my_log := range my_chan {
 					fmt.Fprintln(writer, my_log.Ip)
 				}
 				writer.Flush()
-			}(file_name, my_chan)
+			}(file, my_chan)
 		}
-		map_chan[my_log.From] <- my_log
+		map_chans[my_log.From] <- my_log
 	}
 }
 
@@ -154,12 +147,12 @@ func handleLog(file_name string) {
 		buffer.Write(part)
 		if !prefix {
 			line = buffer.String()
-			if my_log := mylog.NewLog(line); nil != my_log {
-				if date == my_log.Time.Format("20160102") {
+			if my_log := mylog.NewLog(line); nil != my_log && "-" != my_log.From {
+				if date == my_log.Time.Format("20060102") {
 					chan_log <- my_log
 				}
 			}
+			buffer.Reset()
 		}
-		buffer.Reset()
 	}
 }
