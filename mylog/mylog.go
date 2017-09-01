@@ -4,7 +4,6 @@ import (
 	"time"
 	"strings"
 	"fmt"
-	_ "log"
 	"log"
 )
 

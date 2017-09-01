@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 	"path"
+	"runtime/debug"
 )
 
 var rwg sync.WaitGroup
@@ -38,7 +39,7 @@ func main() {
 	// 记录报错信息
 	defer func() {
 		if err := recover(); nil != err {
-			log.Fatal(err)
+			debug.PrintStack()
 		}
 	}()
 
@@ -73,7 +74,7 @@ func writeLog() {
 		if !myfile.FileExist(file_name) {
 			file, err := myfile.CreateFile(file_name)
 			if nil != err {
-				log.Fatal(err)
+				log.Fatal("Create File Failed", err)
 			}
 
 			my_chan := make(chan *mylog.Log)
@@ -127,8 +128,7 @@ func handleLog(file_name string) {
 
 	defer func() {
 		if err := recover(); err != nil {
-			log.Println(line)
-			log.Fatal(err)
+			log.Fatal(line, err)
 		}
 	}()
 
