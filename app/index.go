@@ -70,7 +70,7 @@ func writeLog() {
 	for my_log := range chan_log {
 		file_name := fmt.Sprintf("%s%s/%s.txt", output, date, my_log.From)
 		if !myfile.FileExist(file_name) {
-			file, err := os.Create(file_name)
+			file, err := myfile.CreateFile(file_name)
 			if nil != err {
 				log.Fatal(err)
 			}
