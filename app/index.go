@@ -30,6 +30,7 @@ func init() {
 	flag.StringVar(&date, "date", "", "the date you want to get")
 	flag.StringVar(&input, "input", "./input/", "where you want to get the files")
 	flag.StringVar(&output, "output", "./output/", "where you put the files")
+	flag.BoolVar(&download, "download", true, "do you want to download files")
 	flag.Parse()
 }
 
@@ -70,17 +71,21 @@ func writeLog() {
 	for my_log := range chan_log {
 		file_name := path.Join(output, date, "files", my_log.From + ".txt")
 		if !myfile.FileExist(file_name) {
+
 			file, err := myfile.CreateFile(file_name)
 			if nil != err {
 				log.Fatal(err)
 			}
 			defer file.Close()
+
 			my_chan := make(chan *mylog.Log)
 			map_chan[my_log.From] = my_chan
 			defer close(my_chan)
+
 			wwg.Add(1)
 			go func(file_name string, my_chan chan*mylog.Log) {
 				defer wwg.Done()
+				fmt.Println("file name", file_name)
 				file, err := os.Open(file_name)
 				if nil != err {
 					log.Fatal(err)
@@ -129,7 +134,8 @@ func handleLog(file_name string) {
 
 	defer func() {
 		if err := recover(); err != nil {
-			log.Fatal(line)
+			log.Println(line)
+			log.Fatal(err)
 		}
 	}()
 
