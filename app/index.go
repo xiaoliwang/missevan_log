@@ -58,6 +58,7 @@ func main() {
 	rwg.Wait()
 	close(chan_log)
 	wwg.Wait()
+	log.Println("finish")
 }
 
 func alive() {
