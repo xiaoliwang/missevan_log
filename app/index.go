@@ -128,7 +128,7 @@ func handleLog(file_name string) {
 
 	defer func() {
 		if err := recover(); err != nil {
-			log.Fatal(line, err)
+			log.Fatal("line is wrong", line, err)
 		}
 	}()
 

@@ -16,7 +16,7 @@ type Log struct {
 func NewLog(s string) (my_log *Log) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Println(err)
+			log.Println("Parse Log", err)
 			my_log = nil
 		}
 	}()
