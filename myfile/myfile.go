@@ -8,6 +8,7 @@ import (
 	"os"
 	"log"
 	"time"
+	"path"
 )
 
 // 复制文件
@@ -18,7 +19,7 @@ func Copy(dis, src string)(err error) {
 	}
 	defer reader.Close()
 
-	writer, err := os.Create(dis)
+	writer, err := CreateFile(dis)
 	if nil != err {
 		return
 	}
@@ -58,7 +59,7 @@ func Ungzip(dis, src string) {
 	}
 	defer reader.Close()
 
-	unzip_file, err := os.Create(dis)
+	unzip_file, err := CreateFile(dis)
 	if nil != err {
 		fmt.Println(err)
 	}
@@ -70,9 +71,18 @@ func Ungzip(dis, src string) {
 	}
 }
 
+func CreateFile(file_path string) (*os.File, error) {
+	dir_path := path.Dir(file_path)
+	if !DirExist(dir_path) {
+		os.Mkdir(dir_path, 755)
+	}
+	file, err := os.Create(file_path)
+	return file, err
+}
+
 // 文件是否存在
-func FileExist(path string) bool {
-	info, err := os.Stat(path)
+func FileExist(file_path string) bool {
+	info, err := os.Stat(file_path)
 	if nil == err && !info.IsDir() {
 		return true
 	}
@@ -80,14 +90,15 @@ func FileExist(path string) bool {
 }
 
 // 文件夹是否存在
-func DirExist(path string) bool {
-	info, err := os.Stat(path)
+func DirExist(file_path string) bool {
+	info, err := os.Stat(file_path)
 	if nil == err && info.IsDir() {
 		return true
 	}
 	return false
 }
 
+// 获取日志文件全路径
 const file_name = "20060102"
 const dir_name = "200601"
 func GetFileNames(date string) []string {

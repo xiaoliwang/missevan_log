@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"sync"
 	"time"
+	"path"
 )
 
 var rwg sync.WaitGroup
@@ -44,7 +45,7 @@ func main() {
 		os.Mkdir(output, 755)
 	}
 
-	temp = output + "temp/"
+	temp = path.Join(output, "temp")
 	if !myfile.DirExist(temp) {
 		os.Mkdir(temp, 755)
 	}
@@ -100,20 +101,23 @@ func getLogs(date string) {
 	file_names := myfile.GetFileNames(date)
 	for _, file_name := range file_names {
 		rwg.Add(1)
-		go func(file_name string) {
-			defer rwg.Done()
-			initial_file := input + file_name + ".gz"
-			temp_file := temp + file_name + ".gz"
-			unzip_file := temp + file_name
-
-			if download && !myfile.FileExist(unzip_file) {
-				myfile.Copy(temp_file, initial_file)
-				myfile.Ungzip(unzip_file, temp_file)
-			}
-			handleLog(unzip_file)
-
-		}(file_name)
+		go downloadFiles(file_name)
 	}
+}
+
+func downloadFiles(file_name string) {
+	defer rwg.Done()
+	gz_file := file_name + ".gz"
+	initial_file := path.Join(input, gz_file)
+	temp_file := path.Join(temp, gz_file)
+	unzip_file := path.Join(temp, file_name)
+
+	if download || !myfile.FileExist(unzip_file) {
+		myfile.Copy(temp_file, initial_file)
+		myfile.Ungzip(unzip_file, temp_file)
+	}
+
+	handleLog(unzip_file)
 }
 
 func handleLog(file_name string) {
