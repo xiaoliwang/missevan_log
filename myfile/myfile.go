@@ -30,10 +30,12 @@ func Copy(dis, src string)(err error) {
 		}
 	}()
 
-	if _, err = io.Copy(writer, reader); nil != err {
+	var bytes int64
+	if bytes, err = io.Copy(writer, reader); nil != err {
 		log.Println(err)
 		return
 	}
+	log.Println(src, bytes)
 
 	err = writer.Sync()
 	return
