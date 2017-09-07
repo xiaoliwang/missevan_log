@@ -31,6 +31,7 @@ func Copy(dis, src string)(err error) {
 	}()
 
 	if _, err = io.Copy(writer, reader); nil != err {
+		log.Println(err)
 		return
 	}
 
