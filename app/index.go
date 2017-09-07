@@ -71,7 +71,7 @@ func alive() {
 func writeLog() {
 	map_chans := make(map[string]chan *mylog.Log)
 	for my_log := range chan_log {
-		file_name := path.Join(output, date, "files", my_log.From + ".txt")
+		file_name := path.Join(output, "data", date, my_log.From + ".txt")
 		if !myfile.FileExist(file_name) {
 			file, err := myfile.CreateFile(file_name)
 			if nil != err {
