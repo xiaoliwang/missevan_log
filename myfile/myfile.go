@@ -72,6 +72,7 @@ func Ungzip(dis, src string) {
 	if _, err := io.Copy(writer, reader); nil != err {
 		log.Fatal("unzip gz file failed", src, err)
 	}
+	writer.Flush()
 }
 
 func CreateFile(file_path string) (*os.File, error) {
