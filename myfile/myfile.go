@@ -29,7 +29,7 @@ func Copy(dis, src string)(err error) {
 			err = cerr
 		}
 	}()
-	
+
 	if _, err = io.Copy(writer, reader); nil != err {
 		log.Println(err)
 		return
@@ -111,13 +111,13 @@ func GetFileNames(date string) []string {
 		panic(err)
 	}
 
-	yesterday := today.AddDate(0, 0, -1)
+	// yesterday := today.AddDate(0, 0, -1)
 	tomorrow := today.AddDate(0, 0, 1)
 
-	dates := [3]time.Time {
+	dates := [...]time.Time {
 		tomorrow,
 		today,
-		yesterday,
+		// yesterday,
 	}
 
 	file_type := 4
